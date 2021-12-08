@@ -2,7 +2,9 @@ package net.bigpoint.assessment.gasstation.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.bigpoint.assessment.gasstation.GasPump;
 import net.bigpoint.assessment.gasstation.GasStation;
@@ -13,25 +15,35 @@ import net.bigpoint.assessment.gasstation.exceptions.NotEnoughGasException;
 public class GasStationImpl implements GasStation {
 	
 	private List<GasPump> pumps = new ArrayList<>();
+	private Map<GasType, Double> priceMap = new HashMap();
+	private Map<GasType, Double> availabilityMap = new HashMap();
+	private Double price;
 
 	@Override
 	public void addGasPump(GasPump pump) {
-		// TODO Auto-generated method stub
 		pumps.add(pump);
 
 	}
 
 	@Override
 	public Collection<GasPump> getGasPumps() {
-		// TODO Auto-generated method stub
 		return pumps;
 	}
 
 	@Override
 	public double buyGas(GasType type, double amountInLiters, double maxPricePerLiter)
 			throws NotEnoughGasException, GasTooExpensiveException {
-		// TODO Auto-generated method stub
-		return 0;
+		
+		pumps.stream().filter(p -> p.getGasType().equals(type)).forEach(p -> {
+			
+			if (p.getRemainingAmount() >= amountInLiters) {
+				price = amountInLiters * priceMap.get(type);
+				p.pumpGas(amountInLiters);
+			}
+		});
+		
+		
+		return price;
 	}
 
 	@Override
@@ -66,8 +78,7 @@ public class GasStationImpl implements GasStation {
 
 	@Override
 	public void setPrice(GasType type, double price) {
-		// TODO Auto-generated method stub
-
+		priceMap.put(type, price);
 	}
 
 }
