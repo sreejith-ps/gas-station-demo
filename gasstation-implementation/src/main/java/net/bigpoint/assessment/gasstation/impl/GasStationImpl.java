@@ -17,7 +17,11 @@ public class GasStationImpl implements GasStation {
 	private List<GasPump> pumps = new ArrayList<>();
 	private Map<GasType, Double> priceMap = new HashMap();
 	private Map<GasType, Double> availabilityMap = new HashMap();
-	private Double price;
+	private double price;
+	private double revenue;
+	private int numberOfSales;
+	private int numberOfCancellationsNoGas;
+	private int numberOfCancellationsTooExpensive;
 
 	@Override
 	public void addGasPump(GasPump pump) {
@@ -34,46 +38,54 @@ public class GasStationImpl implements GasStation {
 	public double buyGas(GasType type, double amountInLiters, double maxPricePerLiter)
 			throws NotEnoughGasException, GasTooExpensiveException {
 		
+		if (amountInLiters <= 0)
+			return 0.0;
+		
+		if (maxPricePerLiter < getPrice(type)) {
+			numberOfCancellationsTooExpensive++;
+			throw new GasTooExpensiveException();
+		}
+			
 		pumps.stream().filter(p -> p.getGasType().equals(type)).forEach(p -> {
 			
 			if (p.getRemainingAmount() >= amountInLiters) {
-				price = amountInLiters * priceMap.get(type);
+				price = amountInLiters * getPrice(type);
 				p.pumpGas(amountInLiters);
-			}
+				revenue += price;
+				numberOfSales++;
+			} 
 		});
 		
-		
+		if (price == 0) {
+			numberOfCancellationsNoGas++;
+			throw new NotEnoughGasException();
+		}
 		return price;
 	}
 
 	@Override
 	public double getRevenue() {
-		// TODO Auto-generated method stub
-		return 0;
+		return revenue;
 	}
 
 	@Override
 	public int getNumberOfSales() {
-		// TODO Auto-generated method stub
-		return 0;
+		return numberOfSales;
 	}
 
 	@Override
 	public int getNumberOfCancellationsNoGas() {
-		// TODO Auto-generated method stub
-		return 0;
+		return numberOfCancellationsNoGas;
 	}
 
 	@Override
 	public int getNumberOfCancellationsTooExpensive() {
-		// TODO Auto-generated method stub
-		return 0;
+		return numberOfCancellationsTooExpensive;
 	}
 
 	@Override
 	public double getPrice(GasType type) {
-		// TODO Auto-generated method stub
-		return 0;
+		return priceMap.get(type);
 	}
 
 	@Override
