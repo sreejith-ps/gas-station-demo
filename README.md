@@ -13,7 +13,7 @@ Project to serve the gas from different pumps in a station based on customer req
  - Proper logging
  - Test case improvements for edge cases
  
-Considerations:
+# Considerations:
  - Used spring boot to create the new module. Added H2 dependency with the assumption that the data can be saved in in-memory DB if time permits.
  - No DB integration is done, instead using memory to store and manipulate data.
  - Assumption is that the amount in GasPump is the available quantity in litres.
