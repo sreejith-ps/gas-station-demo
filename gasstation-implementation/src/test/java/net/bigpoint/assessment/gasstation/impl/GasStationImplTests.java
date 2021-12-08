@@ -7,8 +7,6 @@ import java.util.Collection;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import net.bigpoint.assessment.gasstation.GasPump;
@@ -18,7 +16,6 @@ import net.bigpoint.assessment.gasstation.exceptions.GasTooExpensiveException;
 import net.bigpoint.assessment.gasstation.exceptions.NotEnoughGasException;
 
 @SpringBootTest
-@TestInstance(Lifecycle.PER_CLASS)
 public class GasStationImplTests {
 	
 	private GasStation gasStation;
@@ -41,7 +38,7 @@ public class GasStationImplTests {
 	}
 	
 	@Test
-	public void addGasPump() {
+	public void addGasPumpShouldAddPumpsAndReturnCountofPumps() {
 		GasPump pump = new GasPump(GasType.REGULAR, 10);
 		gasStation.addGasPump(pump);
 		Collection<GasPump> p = gasStation.getGasPumps();
@@ -49,13 +46,13 @@ public class GasStationImplTests {
 	}
 	
 	@Test
-	public void getGasPumps() {
+	public void shouldGivePumpSizeWhenGetGasPumpsInvoked() {
 		Collection<GasPump> p = gasStation.getGasPumps();
 		assertEquals(3, p.size());
 	}
 	
 	@Test
-	public void buyGas() {
+	public void shouldReturnPriceWhenBuyGas() {
 		
 		try {
 			Double price = gasStation.buyGas(GasType.DIESEL, 2, 5);
@@ -70,12 +67,12 @@ public class GasStationImplTests {
 	}
 	
 	@Test
-	public void cancellationsNotEnoughGas() {
+	public void shouldThrowNotEnoughGasExceptionWhenRequestedQtyOfGasNotAvailable() {
 		assertThrows(NotEnoughGasException.class, () -> gasStation.buyGas(GasType.DIESEL, 10000, 3));
 	}
 	
 	@Test
-	public void getNumberOfCancellationsNoGas() {
+	public void shouldReturnNumberOfCancellationsDueToNoGasAvailability() {
 		try {
 			gasStation.buyGas(GasType.DIESEL, 1000, 5);
 		} catch (NotEnoughGasException e) {
@@ -90,16 +87,15 @@ public class GasStationImplTests {
 
 	
 	@Test
-	public void cancellationsTooExpensive() {
+	public void shouldThrowGasTooExpensiveExceptionWhenRequestedQtyOfGasNotAvailable() {
 		assertThrows(GasTooExpensiveException.class, () -> gasStation.buyGas(GasType.DIESEL, 10, 1));
 	}
 	
 	@Test
-	public void getNumberOfCancellationsTooExpensive() {
+	public void shouldReturnNumberOfCancellationsDueToGasTooExpensive() {
 		try {
-			Double price = gasStation.buyGas(GasType.DIESEL, 10, 1);
-			price += gasStation.buyGas(GasType.SUPER, 10, 2);
-			assertEquals(45, gasStation.getRevenue());
+			gasStation.buyGas(GasType.DIESEL, 10, 1);
+			gasStation.buyGas(GasType.SUPER, 10, 2);
 		} catch (NotEnoughGasException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -111,11 +107,11 @@ public class GasStationImplTests {
 	}
 	
 	@Test
-	public void getRevenue() {
+	public void shouldReturnTotalRevenueWhenBuyGasOpPerformed() {
 		try {
 			Double price = gasStation.buyGas(GasType.DIESEL, 10, 5);
 			price += gasStation.buyGas(GasType.SUPER, 10, 5);
-			assertEquals(45, gasStation.getRevenue());
+			assertEquals(price, gasStation.getRevenue());
 		} catch (NotEnoughGasException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -126,10 +122,15 @@ public class GasStationImplTests {
 	}
 	
 	@Test
-	public void getPrice() {
-		assertEquals(1.5, gasStation.getPrice(GasType.REGULAR));
-		assertEquals(2.0, gasStation.getPrice(GasType.DIESEL));
-		assertEquals(2.5, gasStation.getPrice(GasType.SUPER));
+	public void shouldSetAndReturnPriceWhenTypeOfPumpAndPriceIsPassed() {
+
+		gasStation.setPrice(GasType.DIESEL, 5.0);
+		gasStation.setPrice(GasType.REGULAR, 4.0);
+		gasStation.setPrice(GasType.SUPER, 6.5);
+		
+		assertEquals(4.0, gasStation.getPrice(GasType.REGULAR));
+		assertEquals(5.0, gasStation.getPrice(GasType.DIESEL));
+		assertEquals(6.5, gasStation.getPrice(GasType.SUPER));
 	}
 
 }
