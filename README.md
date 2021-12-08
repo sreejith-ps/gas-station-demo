@@ -1,5 +1,5 @@
 # gas-station-demo
-Project to serve the gas from different pumps in a station based on customer requirements and availability
+Project to setup pumps in a gas station and serve the gas from different pumps based on customer requirements and availability concurrently
 
 
 
