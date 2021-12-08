@@ -1,13 +1,23 @@
 package net.bigpoint.assessment.gasstation.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.Collection;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.springframework.boot.test.context.SpringBootTest;
 
+import net.bigpoint.assessment.gasstation.GasPump;
 import net.bigpoint.assessment.gasstation.GasStation;
+import net.bigpoint.assessment.gasstation.GasType;
 
-public class GasStationImplTest {
+@SpringBootTest
+@TestInstance(Lifecycle.PER_CLASS)
+public class GasStationImplTests {
 	
 	private GasStation gasStation;
 	
@@ -18,7 +28,11 @@ public class GasStationImplTest {
 	
 	@Test
 	public void addGasPump() {
-		fail();
+		gasStation = new GasStationImpl();
+		GasPump pump = new GasPump(GasType.REGULAR, 10);
+		gasStation.addGasPump(pump);
+		Collection<GasPump> p = gasStation.getGasPumps();
+		assertEquals(1, p.size());
 	}
 	
 	@Test
