@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +55,7 @@ public class GasStationImplTests {
 	}
 	
 	@Test
-	public void shouldReturnPriceWhenBuyGas() {
+	public void testBuyGasWithProperQuantityAndCost() {
 		
 		try {
 			Double price = gasStation.buyGas(GasType.DIESEL, 2, 5);
@@ -64,6 +67,42 @@ public class GasStationImplTests {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+
+	Double price = 0.0;
+	
+    @Test
+	public void testBuyGasWithProperQuantityAndCostMultiThreaded() {
+//    	GasPump diesel = new GasPump(GasType.DIESEL, 500);
+//		gasStation.addGasPump(diesel);
+//		GasPump regular = new GasPump(GasType.REGULAR, 1000);
+//		gasStation.addGasPump(regular);
+//		GasPump superPump = new GasPump(GasType.SUPER, 400);
+//		gasStation.addGasPump(superPump);
+//		
+//
+//		gasStation.setPrice(GasType.DIESEL, 2.0);
+//		gasStation.setPrice(GasType.REGULAR, 1.5);
+//		gasStation.setPrice(GasType.SUPER, 2.5);
+		
+		ExecutorService executors = Executors.newFixedThreadPool(3);
+		
+			for (int i = 0; i < 10; i++) {
+				executors.submit(() -> {
+					try {
+						price += gasStation.buyGas(GasType.DIESEL, 60, 5);
+					} catch (NotEnoughGasException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (GasTooExpensiveException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+				});
+			}
+
 	}
 	
 	@Test
