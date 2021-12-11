@@ -1,10 +1,13 @@
 package net.bigpoint.assessment.gasstation.impl;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import net.bigpoint.assessment.gasstation.GasPump;
 import net.bigpoint.assessment.gasstation.GasStation;
@@ -14,15 +17,15 @@ import net.bigpoint.assessment.gasstation.exceptions.NotEnoughGasException;
 
 public class GasStationImpl implements GasStation {
 	
-	private List<GasPump> pumps = new ArrayList<>();
-	private Map<GasType, Double> priceMap = new HashMap();
-	private Map<GasType, Double> availabilityMap = new HashMap();
-	private double price;
+	private CopyOnWriteArrayList<GasPump> pumps = new CopyOnWriteArrayList<>();
+	private ConcurrentHashMap<GasType, Double> priceMap = new ConcurrentHashMap<GasType, Double>();
 	private double revenue;
-	private int numberOfSales;
-	private int numberOfCancellationsNoGas;
-	private int numberOfCancellationsTooExpensive;
+	private AtomicInteger numberOfSales = new AtomicInteger(0);
+	private AtomicInteger numberOfCancellationsNoGas = new AtomicInteger(0);
+	private AtomicInteger numberOfCancellationsTooExpensive = new AtomicInteger(0);
 
+	Lock lock = new ReentrantLock();
+	
 	@Override
 	public void addGasPump(GasPump pump) {
 		pumps.add(pump);
@@ -42,23 +45,42 @@ public class GasStationImpl implements GasStation {
 			return 0.0;
 		
 		if (maxPricePerLiter < getPrice(type)) {
-			numberOfCancellationsTooExpensive++;
+			numberOfCancellationsTooExpensive.getAndIncrement();
 			throw new GasTooExpensiveException();
 		}
-			
-		pumps.stream().filter(p -> p.getGasType().equals(type)).forEach(p -> {
-			
-			if (p.getRemainingAmount() >= amountInLiters) {
-				price = amountInLiters * getPrice(type);
-				p.pumpGas(amountInLiters);
-				revenue += price;
-				numberOfSales++;
-			} 
-		});
+		Boolean isFilled = false; // flag to check the gas is already filled. Not considered the case if gas can be filled from different pumps of same type as a whole having request quantity available
+		double price = 0;
 		
-		if (price == 0) {
-			numberOfCancellationsNoGas++;
-			throw new NotEnoughGasException();
+		for (int i = 0; i < pumps.size() && !isFilled; i++) {
+			GasPump p = pumps.get(i);
+			
+			if (p.getGasType().equals(type)) {
+				
+				synchronized(p) { //locking to make sure no other threads is executing this block of code 
+					
+					
+						if (!isFilled && p.getRemainingAmount() >= amountInLiters) {
+							p.pumpGas(amountInLiters);
+							
+							try {
+								lock.lock();
+								price = amountInLiters * getPrice(type);
+								revenue += price;
+								numberOfSales.getAndIncrement();
+								isFilled = true;
+								return price;
+							} finally {
+								lock.unlock();
+							}
+						} 
+					
+				}
+			}
+			
+			if (price == 0 && !isFilled && i == pumps.size() - 1) {
+				numberOfCancellationsNoGas.getAndIncrement();
+				throw new NotEnoughGasException();
+			}
 		}
 		return price;
 	}
@@ -70,22 +92,22 @@ public class GasStationImpl implements GasStation {
 
 	@Override
 	public int getNumberOfSales() {
-		return numberOfSales;
+		return numberOfSales.get();
 	}
 
 	@Override
 	public int getNumberOfCancellationsNoGas() {
-		return numberOfCancellationsNoGas;
+		return numberOfCancellationsNoGas.get();
 	}
 
 	@Override
 	public int getNumberOfCancellationsTooExpensive() {
-		return numberOfCancellationsTooExpensive;
+		return numberOfCancellationsTooExpensive.get();
 	}
 
 	@Override
 	public double getPrice(GasType type) {
-		return priceMap.get(type);
+		return priceMap.get(type) != null ? priceMap.get(type) : 0.0;
 	}
 
 	@Override
